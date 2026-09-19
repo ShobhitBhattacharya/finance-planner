@@ -15,15 +15,18 @@ export default function Home() {
   const [goalAmount, setGoalAmount] = useState(1500000);
   const [goalYears, setGoalYears] = useState(3);
   const [applied, setApplied] = useState({ income: 100000, essentials: 60000, savings: 200000, monthlyInvesting: 40000, stability: "Private salaried", goalName: "Marriage", goalAmount: 1500000, goalYears: 3 });
+  const [updated, setUpdated] = useState(false);
 
   const plan = useMemo(() => {
-    const { essentials, savings, goalYears, goalAmount, monthlyInvesting, stability } = applied;
+    const { income, essentials, savings, goalYears, goalAmount, monthlyInvesting, stability } = applied;
     const bufferMonths = essentials ? savings / essentials : 0;
     const monthlyNeeded = goalYears > 0 ? Math.max(0, (goalAmount - savings * 0.15) / (goalYears * 12)) : goalAmount;
     const ratio = goalYears <= 3 ? [80, 20] : goalYears <= 7 ? [50, 50] : [25, 75];
     const gap = monthlyNeeded - monthlyInvesting;
     const disruption = stability === "Business / freelance" ? 9 : stability === "Government / highly stable" ? 4 : 6;
-    return { bufferMonths, monthlyNeeded, ratio, gap, disruption };
+    const savingsRate = income > 0 ? (monthlyInvesting / income) * 100 : 0;
+    const healthScore = Math.min(100, Math.round(35 + Math.min(bufferMonths, 9) * 5 + Math.min(savingsRate, 35) * 0.8 + (gap <= 0 ? 10 : 0)));
+    return { bufferMonths, monthlyNeeded, ratio, gap, disruption, savingsRate, healthScore };
   }, [applied]);
 
   return (
@@ -50,11 +53,12 @@ export default function Home() {
             <Field label="Target amount" value={goalAmount} onChange={setGoalAmount} />
             <Field label="Years until needed" value={goalYears} onChange={setGoalYears} />
           </div>
-          <div className="actions"><button className="primary" onClick={() => setApplied({ income, essentials, savings, monthlyInvesting, stability, goalName, goalAmount, goalYears })}>Update my plan</button><span>Results update when you choose to apply your changes.</span></div>
+          <div className="actions"><button className="primary" onClick={() => { setApplied({ income, essentials, savings, monthlyInvesting, stability, goalName, goalAmount, goalYears }); setUpdated(true); }}>Update my plan</button><span>Results update when you choose to apply your changes.</span></div>
           <p className="small">All values are editable assumptions. This demo keeps your information in this browser session only.</p>
         </div>
         <aside className="results">
-          <div className="card result-card highlight"><p className="eyebrow">PLAN HEALTH</p><div className="score">{Math.min(100, Math.round(45 + Math.min(plan.bufferMonths, 9) * 5 + (plan.gap <= 0 ? 10 : 0)))}</div><p>Your readiness is driven by emergency cash, realistic timelines, and consistent contributions.</p></div>
+          <div className="card result-card highlight"><p className="eyebrow">PLAN HEALTH</p><div className="score">{plan.healthScore}</div><p>Your monthly goal contribution is {plan.savingsRate.toFixed(0)}% of take-home income. Readiness is driven by emergency cash, realistic timelines, and consistency.</p></div>
+          {updated && <div className="applied-message" role="status">✓ Plan updated — results now reflect your latest assumptions.</div>}
           <div className="card result-card"><p className="eyebrow">GOAL FEASIBILITY</p><h3>{applied.goalName} needs <strong>{money(plan.monthlyNeeded)}</strong><small> per month</small></h3><p>{plan.gap > 0 ? `You are short by ${money(plan.gap)} each month at the current timeline.` : "Your current monthly contribution can support this goal under these assumptions."}</p></div>
           <div className="card result-card"><p className="eyebrow">GOAL-WISE PRINCIPLE</p><h3><strong>{plan.ratio[0]}%</strong> stability · <strong>{plan.ratio[1]}%</strong> growth</h3><p>{applied.goalYears <= 3 ? "A fixed, near-term goal generally needs capital protection more than return chasing." : applied.goalYears <= 7 ? "This horizon can balance stability with growth, while keeping the deadline visible." : "A long horizon can tolerate more growth exposure, subject to your risk capacity."}</p></div>
           <div className="card result-card"><p className="eyebrow">NEXT BEST MOVE</p><h3>{plan.bufferMonths < plan.disruption ? "Strengthen your safety buffer" : plan.gap > 0 ? "Choose a trade-off" : "Stress-test this plan"}</h3><p>{plan.bufferMonths < plan.disruption ? `You currently have ${plan.bufferMonths.toFixed(1)} months of essentials saved. Your selected income pattern suggests testing a ${plan.disruption}-month interruption.` : plan.gap > 0 ? "Extend the deadline, lower the goal cost, or increase your monthly contribution—then compare the impact." : "Try higher inflation, lower returns, or a period without income before relying on this outcome."}</p></div>
