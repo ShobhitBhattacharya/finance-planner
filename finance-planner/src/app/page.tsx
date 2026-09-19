@@ -28,6 +28,8 @@ export default function Home() {
     const healthScore = Math.min(100, Math.round(35 + Math.min(bufferMonths, 9) * 5 + Math.min(savingsRate, 35) * 0.8 + (gap <= 0 ? 10 : 0)));
     return { bufferMonths, monthlyNeeded, ratio, gap, disruption, savingsRate, healthScore };
   }, [applied]);
+  const suggestedMonthly = goalYears > 0 ? Math.max(0, (goalAmount - savings * 0.15) / (goalYears * 12)) : goalAmount;
+  const draftGap = suggestedMonthly - monthlyInvesting;
 
   return (
     <main>
@@ -44,7 +46,7 @@ export default function Home() {
             <Field label="Monthly take-home income" value={income} onChange={setIncome} />
             <Field label="Essential monthly expenses" value={essentials} onChange={setEssentials} />
             <Field label="Liquid savings" value={savings} onChange={setSavings} />
-            <Field label="Monthly goal contribution" value={monthlyInvesting} onChange={setMonthlyInvesting} />
+            <Field label="Your current monthly contribution" value={monthlyInvesting} onChange={setMonthlyInvesting} />
           </div>
           <label className="field"><span>Income pattern</span><select value={stability} onChange={(e) => setStability(e.target.value)}><option>Private salaried</option><option>Government / highly stable</option><option>Business / freelance</option><option>Variable income</option></select></label>
           <div className="section-heading goal-heading"><p className="eyebrow">02 · A PRIORITY GOAL</p><h2>What are you planning for?</h2></div>
@@ -53,6 +55,7 @@ export default function Home() {
             <Field label="Target amount" value={goalAmount} onChange={setGoalAmount} />
             <Field label="Years until needed" value={goalYears} onChange={setGoalYears} />
           </div>
+          <div className="goal-guidance"><strong>Suggested for this goal: {money(suggestedMonthly)}/month</strong><span>{draftGap > 0 ? `That is ${money(draftGap)} more than your current contribution.` : "Your current contribution meets this goal under the current assumptions."}</span></div>
           <div className="actions"><button className="primary" onClick={() => { setApplied({ income, essentials, savings, monthlyInvesting, stability, goalName, goalAmount, goalYears }); setUpdated(true); }}>Update my plan</button><span>Results update when you choose to apply your changes.</span></div>
           <p className="small">All values are editable assumptions. This demo keeps your information in this browser session only.</p>
         </div>
